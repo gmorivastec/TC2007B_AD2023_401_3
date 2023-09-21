@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:http/http.dart' as http;
 
 void main() {
   runApp(const MainApp());
@@ -52,7 +54,8 @@ class StatelessExample extends StatelessWidget {
       appBar: AppBar(
         title: const Text("HEY GUYS"),
       ),
-      body: Column(
+      body: const EjemploLista(),
+      /* Column(
         children: [
           const Text("HEY GUYS"),
           const Text("WE ARE USING A COLUMN"),
@@ -60,7 +63,7 @@ class StatelessExample extends StatelessWidget {
           Image.network(
               "https://www.isabeleats.com/wp-content/uploads/2020/11/chilaquiles-verdes-small-8-127x191.jpg")
         ],
-      ),
+        */
     );
   }
 }
@@ -81,3 +84,99 @@ class _StatefulExampleState extends State<StatefulExample> {
     return const Placeholder();
   }
 }
+
+class EjemploLista extends StatefulWidget {
+  const EjemploLista({super.key});
+
+  @override
+  State<EjemploLista> createState() => _EjemploListaState();
+}
+
+// basic version with predefined data
+class _EjemploListaState extends State<EjemploLista> {
+  final List<String> _content = ["a", "b", "c", "d", "e"];
+  final TextStyle _style = const TextStyle(fontSize: 20.0);
+
+  @override
+  Widget build(BuildContext context) {
+    return _buildList();
+  }
+
+  // we can have several methods that return a widget
+  // BUT the most important one is the build method (the one that is
+  // called from the outside)
+  Widget _buildList() {
+    // design pattern
+    // - factory
+    return ListView.builder(
+      padding: const EdgeInsets.all(16.0),
+      itemCount: _content.length,
+      itemBuilder: (context, i) {
+        return _buildRow(_content[i]);
+      },
+    );
+  }
+
+  Widget _buildRow(String value) {
+    return ListTile(
+      title: Text(
+        value,
+        style: _style,
+      ),
+      onTap: () {
+        Fluttertoast.showToast(
+            msg: "YOU TOUCHED A TILE! $value",
+            toastLength: Toast.LENGTH_LONG,
+            gravity: ToastGravity.CENTER,
+            timeInSecForIosWeb: 1);
+
+        Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (context) => DetailView(
+                      externalArg: value,
+                    )));
+      },
+    );
+  }
+}
+
+class DetailView extends StatelessWidget {
+  const DetailView({super.key, required this.externalArg});
+
+  final String externalArg;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text("DETAIL VIEW")),
+      body: Center(child: Text("THE INFO ON THE DETAIL VIEW FOR $externalArg")),
+    );
+  }
+}
+
+// let's do a request!
+// to do so we need to do 2 things -
+// 1. Define a class that will be used to parse a JSON
+// 2. do an HTTP request
+
+// url - https://bitbucket.org/itesmguillermorivas/partial2/raw/45f22905941b70964102fce8caf882b51e988d23/carros.json
+
+class Car {
+  // constructor to initialize values
+  Car({required this.brand, required this.model, required this.year});
+  final String brand;
+  final String model;
+  final int year;
+
+  // we will define a factory method
+  // https://en.wikipedia.org/wiki/Factory_method_pattern
+  factory Car.fromJSON(Map<String, dynamic> json) {
+    return Car(brand: json['marca'], model: json['modelo'], year: json['anio']);
+  }
+}
+
+// We can declar a method with no class
+// there is no restriction whatsoever on dart!
+
+// Future<List<Car>> getCars() async {}
