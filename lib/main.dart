@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:http/http.dart' as http;
@@ -133,9 +135,11 @@ class _EjemploListaState extends State<EjemploLista> {
         Navigator.push(
             context,
             MaterialPageRoute(
+                /*
                 builder: (context) => DetailView(
                       externalArg: value,
-                    )));
+                    )));*/
+                builder: (context) => const RequestDetail()));
       },
     );
   }
@@ -152,6 +156,51 @@ class DetailView extends StatelessWidget {
       appBar: AppBar(title: const Text("DETAIL VIEW")),
       body: Center(child: Text("THE INFO ON THE DETAIL VIEW FOR $externalArg")),
     );
+  }
+}
+
+class RequestDetail extends StatefulWidget {
+  const RequestDetail({super.key});
+
+  @override
+  State<RequestDetail> createState() => _RequestDetailState();
+}
+
+class _RequestDetailState extends State<RequestDetail> {
+  late Future<List<Car>> cars;
+
+  @override
+  void initState() {
+    super.initState();
+    cars = getCars();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+        appBar: AppBar(title: const Text("DETAIL WITH REQUEST")),
+        body: Center(
+          child: FutureBuilder<List<Car>>(
+              future: cars,
+              builder: (context, snapshot) {
+                if (snapshot.hasData) {
+                  List<Widget> result = [];
+
+                  for (var currentCar in snapshot.data!) {
+                    result.add(Text(
+                        "${currentCar.brand} ${currentCar.model} ${currentCar.year}"));
+                  }
+                  // request is done and we have data
+                  return Column(
+                    children: result,
+                  );
+                } else if (snapshot.hasError) {
+                  return Text("${snapshot.error}");
+                }
+
+                return const CircularProgressIndicator();
+              }),
+        ));
   }
 }
 
@@ -179,4 +228,21 @@ class Car {
 // We can declar a method with no class
 // there is no restriction whatsoever on dart!
 
-// Future<List<Car>> getCars() async {}
+Future<List<Car>> getCars() async {
+  final response = await http.get(Uri.parse(
+      "https://bitbucket.org/itesmguillermorivas/partial2/raw/45f22905941b70964102fce8caf882b51e988d23/carros.json"));
+
+  if (response.statusCode == 200) {
+    List<dynamic> jsonResult = jsonDecode(response.body);
+    List<Car> cars = [];
+
+    for (var current in jsonResult) {
+      Car currentCar = Car.fromJSON(current);
+      cars.add(currentCar);
+    }
+
+    return cars;
+  } else {
+    throw Exception("REQUEST HAD ERRORS");
+  }
+}
